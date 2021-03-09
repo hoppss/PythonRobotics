@@ -17,7 +17,9 @@ class Node:
         self.y = y
         self.cost = cost
         self.pind = pind
+        # x,y 为 coord index, pind 为联合index
 
+    #魔法函数 print 直接调用
     def __str__(self):
         return str(self.x) + "," + str(self.y) + "," + str(self.cost) + "," + str(self.pind)
 
@@ -37,17 +39,20 @@ def dijkstra_planning(sx, sy, gx, gy, ox, oy, reso, rr):
     ox = [iox / reso for iox in ox]
     oy = [ioy / reso for ioy in oy]
 
+    # map, 地图边界最值， x-width, y-height
     obmap, minx, miny, maxx, maxy, xw, yw = calc_obstacle_map(ox, oy, reso, rr)
 
     motion = get_motion_model()
 
-    openset, closedset = dict(), dict()
-    openset[calc_index(nstart, xw, minx, miny)] = nstart
+    openset, closedset = dict(), dict() #dict 为无序， 所以需要每次从openlist pop时，需要查找
+    openset[calc_index(nstart, xw, minx, miny)] = nstart   # key is index, value is Node
 
     while 1:
-        c_id = min(openset, key=lambda o: openset[o].cost)
-        current = openset[c_id]
-        #  print("current", current)
+        # 获取openlist 中cost 最小的 index:Node
+        c_id = min(openset, key=lambda o: openset[o].cost)   #得到key, key=func, 比较cost
+        # min对字典处理完，无论比较的是key还是value返回的都是key
+        current = openset[c_id] # Node
+        print("current", current)   # 前面定义了 Node.__str__
 
         # show graph
         if show_animation:
@@ -55,6 +60,7 @@ def dijkstra_planning(sx, sy, gx, gy, ox, oy, reso, rr):
             if len(closedset.keys()) % 10 == 0:
                 plt.pause(0.001)
 
+        # 终止条件判断
         if current.x == ngoal.x and current.y == ngoal.y:
             print("Find goal")
             ngoal.pind = current.pind
@@ -62,7 +68,8 @@ def dijkstra_planning(sx, sy, gx, gy, ox, oy, reso, rr):
             break
 
         # Remove the item from the open set
-        del openset[c_id]
+        del openset[c_id] # del key
+
         # Add it to the closed set
         closedset[c_id] = current
 
@@ -72,18 +79,19 @@ def dijkstra_planning(sx, sy, gx, gy, ox, oy, reso, rr):
                         current.cost + motion[i][2], c_id)
             n_id = calc_index(node, xw, minx, miny)
 
+            # 是否地图内的结点, 是否障碍物
             if not verify_node(node, obmap, minx, miny, maxx, maxy):
                 continue
-
+            # 是否已经在clost_list（之前已经找过了耳）, 判断的是key
             if n_id in closedset:
                 continue
-            # Otherwise if it is already in the open set
+            # Otherwise if it is already in the open set， 如果在open_list, 检查更新cost
             if n_id in openset:
                 if openset[n_id].cost > node.cost:
                     openset[n_id].cost = node.cost
                     openset[n_id].pind = c_id
             else:
-                openset[n_id] = node
+                openset[n_id] = node    #expansion
 
     rx, ry = calc_final_path(ngoal, closedset, reso)
 
@@ -104,10 +112,10 @@ def calc_final_path(ngoal, closedset, reso):
 
 
 def verify_node(node, obmap, minx, miny, maxx, maxy):
-
+    # 检查是否被占用
     if obmap[node.x][node.y]:
         return False
-
+    # 检查Node是否在有效区间内
     if node.x < minx:
         return False
     elif node.y < miny:
@@ -122,7 +130,7 @@ def verify_node(node, obmap, minx, miny, maxx, maxy):
 
 def calc_obstacle_map(ox, oy, reso, vr):
 
-    minx = round(min(ox))
+    minx = round(min(ox))   # meter
     miny = round(min(oy))
     maxx = round(max(ox))
     maxy = round(max(oy))
@@ -133,20 +141,20 @@ def calc_obstacle_map(ox, oy, reso, vr):
 
     xwidth = round(maxx - minx)
     ywidth = round(maxy - miny)
-    #  print("xwidth:", xwidth)
-    #  print("ywidth:", ywidth)
+    print("xwidth:", xwidth)
+    print("ywidth:", ywidth)
 
     # obstacle map generation
     obmap = [[False for i in range(ywidth)] for i in range(xwidth)]
     for ix in range(xwidth):
-        x = ix + minx
+        x = ix + minx # meter
         for iy in range(ywidth):
             y = iy + miny
-            #  print(x, y)
+            #  print(x, y)  # 遍历世界坐标范围，也就是地图， 这里没考虑分辨率
             for iox, ioy in zip(ox, oy):
                 d = math.sqrt((iox - x)**2 + (ioy - y)**2)
                 if d <= vr / reso:
-                    obmap[ix][iy] = True
+                    obmap[ix][iy] = True   # obstacle inflation
                     break
 
     return obmap, minx, miny, maxx, maxy, xwidth, ywidth
@@ -181,30 +189,31 @@ def main():
     grid_size = 1.0  # [m]
     robot_size = 1.0  # [m]
 
-    ox = []
+    ox = [] # meter
     oy = []
 
     for i in range(60):
-        ox.append(i)
+        ox.append(i)    #下边界
         oy.append(0.0)
     for i in range(60):
-        ox.append(60.0)
+        ox.append(60.0)  #右边界
         oy.append(i)
     for i in range(61):
-        ox.append(i)
+        ox.append(i)    #上边界
         oy.append(60.0)
     for i in range(61):
-        ox.append(0.0)
+        ox.append(0.0)  #左边界
         oy.append(i)
     for i in range(40):
-        ox.append(20.0)
+        ox.append(20.0)     #左下中间障碍
         oy.append(i)
     for i in range(40):
-        ox.append(40.0)
+        ox.append(40.0)     # 右上中间障碍
         oy.append(60.0 - i)
 
     if show_animation:
-        plt.plot(ox, oy, ".k")
+        plt.plot(ox, oy, ".k")  # k黑色
+
         plt.plot(sx, sy, "xr")
         plt.plot(gx, gy, "xb")
         plt.grid(True)
