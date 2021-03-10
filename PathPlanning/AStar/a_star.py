@@ -64,7 +64,7 @@ def a_star_planning(sx, sy, gx, gy, ox, oy, reso, rr):
 
     while 1:
         c_id = min(
-            openset, key=lambda o: openset[o].cost + calc_heuristic(ngoal, openset[o]))
+            openset, key=lambda o: openset[o].cost + calc_heuristic(ngoal, openset[o])) # openlist 选出f最小的Node
         current = openset[c_id]
 
         # show graph
@@ -110,7 +110,7 @@ def a_star_planning(sx, sy, gx, gy, ox, oy, reso, rr):
 
 
 def calc_heuristic(n1, n2):
-    w = 1.0  # weight of heuristic
+    w = 1.0  # weight of heuristic, 忽略权重，A* 启发函数变种多
     d = w * math.sqrt((n1.x - n2.x)**2 + (n1.y - n2.y)**2)
     return d
 
